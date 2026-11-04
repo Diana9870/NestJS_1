@@ -1,9 +1,8 @@
 import {
   BadRequestException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { FilmsService } from '../films/films.service';
@@ -12,18 +11,33 @@ import { CreateShowingDto } from './dto/create-showing.dto';
 import { QueryShowingsDto } from './dto/query-showings.dto';
 import { Showing, ShowingView } from './entities/showing.entity';
 
+/**
+ * Parses an ISO 8601 date-time to epoch ms. A value without an offset
+ * (2099-01-01T18:00:00) is read as UTC, never in the server's local zone.
+ */
+function parseStartsAt(value: string): number {
+  const hasOffset = /(Z|[+-]\d{2}(:?\d{2})?)$/i.test(value.split('T')[1] ?? '');
+  const isDateTime = value.includes('T');
+  return Date.parse(isDateTime && !hasOffset ? `${value}Z` : value);
+}
+
 @Injectable()
-export class ShowingsService {
+export class ShowingsService implements OnModuleInit {
   private readonly showings: Showing[] = [];
 
   constructor(
-    // forwardRef: films and halls call back into this service to check
-    // whether they are still referenced before they delete anything.
-    @Inject(forwardRef(() => FilmsService))
     private readonly filmsService: FilmsService,
-    @Inject(forwardRef(() => HallsService))
     private readonly hallsService: HallsService,
   ) {}
+
+  /**
+   * Films and halls must not be deleted while a showing uses them. Instead of
+   * importing this module (a dependency cycle), they accept a guard from us.
+   */
+  onModuleInit(): void {
+    this.filmsService.registerDeletionGuard((id) => this.existsForFilm(id));
+    this.hallsService.registerDeletionGuard((id) => this.existsForHall(id));
+  }
 
   create(dto: CreateShowingDto): Showing {
     if (!this.filmsService.findById(dto.filmId)) {
@@ -33,7 +47,7 @@ export class ShowingsService {
       throw new BadRequestException(`Hall with id ${dto.hallId} not found`);
     }
 
-    const startsAtMs = Date.parse(dto.startsAt);
+    const startsAtMs = parseStartsAt(dto.startsAt);
     if (Number.isNaN(startsAtMs)) {
       throw new BadRequestException(
         'startsAt is not a valid ISO 8601 date and time',
@@ -47,7 +61,9 @@ export class ShowingsService {
       id: randomUUID(),
       filmId: dto.filmId,
       hallId: dto.hallId,
-      startsAt: dto.startsAt,
+      // One canonical form (UTC, ms precision): the date filter, sorting and
+      // responses no longer depend on the offset the client used.
+      startsAt: new Date(startsAtMs).toISOString(),
       price: dto.price,
     };
     this.showings.push(showing);
@@ -62,7 +78,7 @@ export class ShowingsService {
       .filter(
         (showing) =>
           date === undefined ||
-          new Date(showing.startsAt).toISOString().slice(0, 10) === date,
+          showing.startsAt.slice(0, 10) === date,
       )
       .sort(
         (a, b) =>

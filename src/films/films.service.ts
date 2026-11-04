@@ -1,12 +1,9 @@
 import {
   ConflictException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { ShowingsService } from '../showings/showings.service';
 import { CreateFilmDto } from './dto/create-film.dto';
 import { UpdateFilmDto } from './dto/update-film.dto';
 import { Film } from './entities/film.entity';
@@ -15,12 +12,16 @@ import { Film } from './entities/film.entity';
 export class FilmsService {
   private readonly films: Film[] = [];
 
-  constructor(
-    // Films and showings reference each other (a film cannot be deleted while
-    // a showing uses it), hence forwardRef on both sides.
-    @Inject(forwardRef(() => ShowingsService))
-    private readonly showingsService: ShowingsService,
-  ) {}
+  /**
+   * Checks that block deletion. A module that references films (showings)
+   * registers one here, so FilmsService does not depend on it and the module
+   * graph stays acyclic. A guard returns true while the film is still in use.
+   */
+  private readonly deletionGuards: Array<(filmId: string) => boolean> = [];
+
+  registerDeletionGuard(isInUse: (filmId: string) => boolean): void {
+    this.deletionGuards.push(isInUse);
+  }
 
   create(dto: CreateFilmDto): Film {
     const film: Film = {
@@ -62,7 +63,7 @@ export class FilmsService {
 
   remove(id: string): void {
     const film = this.findOne(id);
-    if (this.showingsService.existsForFilm(id)) {
+    if (this.deletionGuards.some((isInUse) => isInUse(id))) {
       throw new ConflictException(
         `Film ${id} cannot be deleted: at least one showing references it`,
       );

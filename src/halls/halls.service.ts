@@ -1,12 +1,9 @@
 import {
   ConflictException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { ShowingsService } from '../showings/showings.service';
 import { CreateHallDto } from './dto/create-hall.dto';
 import { Hall, HallWithSeats } from './entities/hall.entity';
 import { Seat } from './entities/seat.entity';
@@ -15,15 +12,21 @@ import { Seat } from './entities/seat.entity';
 export class HallsService {
   private readonly halls: Hall[] = [];
 
-  constructor(
-    // Halls and showings reference each other (a hall cannot be deleted while
-    // a showing uses it), hence forwardRef on both sides.
-    @Inject(forwardRef(() => ShowingsService))
-    private readonly showingsService: ShowingsService,
-  ) {}
+  /**
+   * Checks that block deletion. A module that references halls (showings)
+   * registers one here, so HallsService does not depend on it and the module
+   * graph stays acyclic. A guard returns true while the hall is still in use.
+   */
+  private readonly deletionGuards: Array<(hallId: string) => boolean> = [];
+
+  registerDeletionGuard(isInUse: (hallId: string) => boolean): void {
+    this.deletionGuards.push(isInUse);
+  }
 
   create(dto: CreateHallDto): Hall {
-    if (this.halls.some((hall) => hall.name === dto.name)) {
+    if (this.halls.some(
+        (hall) => hall.name.toLowerCase() === dto.name.toLowerCase(),
+      )) {
       throw new ConflictException(
         `Hall with name "${dto.name}" already exists`,
       );
@@ -73,7 +76,7 @@ export class HallsService {
 
   remove(id: string): void {
     const hall = this.findOne(id);
-    if (this.showingsService.existsForHall(id)) {
+    if (this.deletionGuards.some((isInUse) => isInUse(id))) {
       throw new ConflictException(
         `Hall ${id} cannot be deleted: at least one showing references it`,
       );
