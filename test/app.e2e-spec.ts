@@ -297,16 +297,21 @@ describe('Cinema API (e2e)', () => {
       await http.get('/showings?date=2030-13-45').expect(400);
     });
 
-    it('нормалізує startsAt до UTC, а date рахує добу за UTC', async () => {
+    it('повертає startsAt як надіслано, а date рахує добу за UTC', async () => {
       const film = await createFilm();
       const hall = await createHall();
       // 01:00 за +03:00 це ще 22:00 попередньої доби за UTC.
-      const shifted = await createShowing(
-        film.id,
-        hall.id,
-        '2099-06-01T01:00:00+03:00',
-      );
-      expect(shifted.startsAt).toBe('2099-05-31T22:00:00.000Z');
+      const sent = '2099-06-01T01:00:00+03:00';
+      const shifted = await createShowing(film.id, hall.id, sent);
+      expect(shifted.startsAt).toBe(sent);
+      expect(shifted).not.toHaveProperty('startsAtMs');
+
+      const one = await http.get(`/showings/${shifted.id}`).expect(200);
+      expect(one.body.startsAt).toBe(sent);
+      expect(one.body).not.toHaveProperty('startsAtMs');
+      const list = await http.get('/showings').expect(200);
+      expect(list.body[0].startsAt).toBe(sent);
+      expect(list.body[0]).not.toHaveProperty('startsAtMs');
 
       const prevDay = await http.get('/showings?date=2099-05-31').expect(200);
       expect(ids(prevDay.body)).toEqual([shifted.id]);
@@ -314,7 +319,7 @@ describe('Cinema API (e2e)', () => {
       expect(nextDay.body).toEqual([]);
     });
 
-    it('значення без зсуву читається як UTC', async () => {
+    it('значення без зсуву зберігається як є й читається як UTC', async () => {
       const film = await createFilm();
       const hall = await createHall();
       const showing = await createShowing(
@@ -322,7 +327,7 @@ describe('Cinema API (e2e)', () => {
         hall.id,
         '2099-07-01T18:00:00',
       );
-      expect(showing.startsAt).toBe('2099-07-01T18:00:00.000Z');
+      expect(showing.startsAt).toBe('2099-07-01T18:00:00');
       const res = await http.get('/showings?date=2099-07-01').expect(200);
       expect(ids(res.body)).toEqual([showing.id]);
     });

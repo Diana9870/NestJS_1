@@ -12,7 +12,7 @@ export class CreateShowingDto {
 
   @ApiProperty({
     description:
-      'ISO 8601 date and time, must be in the future. A value without an offset is read as UTC; the stored value is normalised to UTC.',
+      'ISO 8601 date and time, must be in the future. A value without an offset is read as UTC. The value is returned exactly as sent; sorting and the date filter use the UTC instant.',
     example: '2099-01-01T18:00:00Z',
   })
   // Date AND time in the extended format (2099-01-01T18:00[:00][Z|+03:00]):

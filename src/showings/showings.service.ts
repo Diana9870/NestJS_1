@@ -9,7 +9,11 @@ import { FilmsService } from '../films/films.service';
 import { HallsService } from '../halls/halls.service';
 import { CreateShowingDto } from './dto/create-showing.dto';
 import { QueryShowingsDto } from './dto/query-showings.dto';
-import { Showing, ShowingView } from './entities/showing.entity';
+import {
+  Showing,
+  ShowingView,
+  StoredShowing,
+} from './entities/showing.entity';
 
 /**
  * Parses an ISO 8601 date-time to epoch ms. A value without an offset
@@ -23,7 +27,7 @@ function parseStartsAt(value: string): number {
 
 @Injectable()
 export class ShowingsService implements OnModuleInit {
-  private readonly showings: Showing[] = [];
+  private readonly showings: StoredShowing[] = [];
 
   constructor(
     private readonly filmsService: FilmsService,
@@ -57,17 +61,19 @@ export class ShowingsService implements OnModuleInit {
       throw new BadRequestException('startsAt must not be in the past');
     }
 
-    const showing: Showing = {
+    const showing: StoredShowing = {
       id: randomUUID(),
       filmId: dto.filmId,
       hallId: dto.hallId,
-      // One canonical form (UTC, ms precision): the date filter, sorting and
-      // responses no longer depend on the offset the client used.
-      startsAt: new Date(startsAtMs).toISOString(),
+      // Returned to clients exactly as they sent it.
+      startsAt: dto.startsAt,
+      // The real instant (UTC): the date filter and sorting use this, so they
+      // do not depend on the offset the client used.
+      startsAtMs,
       price: dto.price,
     };
     this.showings.push(showing);
-    return showing;
+    return this.toPublic(showing);
   }
 
   findAll(query: QueryShowingsDto): ShowingView[] {
@@ -78,11 +84,11 @@ export class ShowingsService implements OnModuleInit {
       .filter(
         (showing) =>
           date === undefined ||
-          showing.startsAt.slice(0, 10) === date,
+          new Date(showing.startsAtMs).toISOString().slice(0, 10) === date,
       )
       .sort(
         (a, b) =>
-          Date.parse(a.startsAt) - Date.parse(b.startsAt) ||
+          a.startsAtMs - b.startsAtMs ||
           (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
       )
       .map((showing) => this.toView(showing));
@@ -93,7 +99,7 @@ export class ShowingsService implements OnModuleInit {
   }
 
   /** The stored showing (with filmId and hallId), for other modules. Throws 404. */
-  findEntity(id: string): Showing {
+  findEntity(id: string): StoredShowing {
     const showing = this.showings.find((item) => item.id === id);
     if (!showing) {
       throw new NotFoundException(`Showing with id ${id} not found`);
@@ -109,7 +115,18 @@ export class ShowingsService implements OnModuleInit {
     return this.showings.some((showing) => showing.hallId === hallId);
   }
 
-  private toView(showing: Showing): ShowingView {
+  /** The showing without the private startsAtMs, for the POST response. */
+  private toPublic(showing: StoredShowing): Showing {
+    return {
+      id: showing.id,
+      filmId: showing.filmId,
+      hallId: showing.hallId,
+      startsAt: showing.startsAt,
+      price: showing.price,
+    };
+  }
+
+  private toView(showing: StoredShowing): ShowingView {
     return {
       id: showing.id,
       filmTitle: this.filmsService.findOne(showing.filmId).title,
