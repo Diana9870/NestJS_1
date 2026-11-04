@@ -1,7 +1,7 @@
 import { CreateFilmDto } from './dto/create-film.dto';
 import { UpdateFilmDto } from './dto/update-film.dto';
+import { Film } from './entities/film.entity';
 import { FilmsService } from './films.service';
-import type { Film } from './films.service';
 export declare class FilmsController {
     private readonly filmsService;
     constructor(filmsService: FilmsService);

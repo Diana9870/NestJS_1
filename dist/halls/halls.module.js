@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HallsModule = void 0;
 const common_1 = require("@nestjs/common");
+const showings_module_1 = require("../showings/showings.module");
 const halls_controller_1 = require("./halls.controller");
 const halls_service_1 = require("./halls.service");
 let HallsModule = class HallsModule {
@@ -15,8 +16,10 @@ let HallsModule = class HallsModule {
 exports.HallsModule = HallsModule;
 exports.HallsModule = HallsModule = __decorate([
     (0, common_1.Module)({
+        imports: [(0, common_1.forwardRef)(() => showings_module_1.ShowingsModule)],
         controllers: [halls_controller_1.HallsController],
-        providers: [halls_service_1.HallsService]
+        providers: [halls_service_1.HallsService],
+        exports: [halls_service_1.HallsService],
     })
 ], HallsModule);
 //# sourceMappingURL=halls.module.js.map

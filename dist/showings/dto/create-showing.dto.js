@@ -16,21 +16,35 @@ class CreateShowingDto {
     filmId;
     hallId;
     startsAt;
+    price;
 }
 exports.CreateShowingDto = CreateShowingDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'cc9e4f23-8a45-46e8-b292-75a398434472' }),
+    (0, swagger_1.ApiProperty)({ description: 'Id of an existing film', format: 'uuid' }),
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateShowingDto.prototype, "filmId", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: '63321086-5e3f-46b2-a17e-8391ae7effeb' }),
+    (0, swagger_1.ApiProperty)({ description: 'Id of an existing hall', format: 'uuid' }),
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateShowingDto.prototype, "hallId", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: '2026-10-25T18:30:00.000Z' }),
-    (0, class_validator_1.IsDateString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'ISO 8601 date and time, must be in the future',
+        example: '2099-01-01T18:00:00Z',
+    }),
+    (0, class_validator_1.IsISO8601)({ strict: true, strictSeparator: true }),
     __metadata("design:type", String)
 ], CreateShowingDto.prototype, "startsAt", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Ticket price in kopiykas, a positive integer (12500 = 125 UAH)',
+        example: 12500,
+        minimum: 1,
+    }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.IsPositive)(),
+    __metadata("design:type", Number)
+], CreateShowingDto.prototype, "price", void 0);
 //# sourceMappingURL=create-showing.dto.js.map

@@ -1,31 +1,26 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setTitle('Cinema API')
     .setDescription(
-      'API для керування фільмами, залами, сеансами та бронюваннями кінотеатру',
+      'Films, halls, showings and seat bookings. Data is kept in memory and lost on restart. Prices are integers in kopiykas (12500 = 125 UAH).',
     )
     .setVersion('1.0')
     .build();
+  SwaggerModule.setup(
+    'docs',
+    app,
+    SwaggerModule.createDocument(app, swaggerConfig),
+  );
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
-
-  await app.listen(process.env.PORT ?? 3000);
+  const port = Number(app.get(ConfigService).get('PORT') ?? 3000);
+  await app.listen(port);
 }
 
-bootstrap();
+void bootstrap();

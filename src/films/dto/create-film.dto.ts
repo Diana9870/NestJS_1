@@ -1,26 +1,34 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
+  IsPositive,
   IsString,
   Max,
+  MaxLength,
   Min,
-  MinLength,
 } from 'class-validator';
+import { trimString } from '../../common/transforms';
 
 export class CreateFilmDto {
-  @ApiProperty({ example: 'Interstellar', description: 'Назва фільму' })
+  @ApiProperty({ example: 'Dune: Part Two', maxLength: 255 })
+  @Transform(trimString)
   @IsString()
   @IsNotEmpty()
-  @MinLength(1)
+  @MaxLength(255)
   title: string;
 
-  @ApiProperty({ example: 169, description: 'Тривалість у хвилинах' })
+  @ApiProperty({
+    description: 'Duration in minutes, a positive integer',
+    example: 166,
+    minimum: 1,
+  })
   @IsInt()
-  @Min(1)
+  @IsPositive()
   durationMinutes: number;
 
-  @ApiProperty({ example: 2014, description: 'Рік випуску' })
+  @ApiProperty({ example: 2024, minimum: 1888, maximum: 2100 })
   @IsInt()
   @Min(1888)
   @Max(2100)

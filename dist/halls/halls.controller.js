@@ -15,7 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HallsController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
+const error_response_dto_1 = require("../common/dto/error-response.dto");
+const parse_id_pipe_1 = require("../common/pipes/parse-id.pipe");
 const create_hall_dto_1 = require("./dto/create-hall.dto");
+const hall_entity_1 = require("./entities/hall.entity");
 const halls_service_1 = require("./halls.service");
 let HallsController = class HallsController {
     hallsService;
@@ -29,53 +32,70 @@ let HallsController = class HallsController {
         return this.hallsService.findAll();
     }
     findOne(id) {
-        return this.hallsService.findOne(id);
+        return this.hallsService.findOneWithSeats(id);
     }
     remove(id) {
-        this.hallsService.remove(id, false);
+        this.hallsService.remove(id);
     }
 };
 exports.HallsController = HallsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Створити зал' }),
-    (0, swagger_1.ApiCreatedResponse)({ description: 'Зал створено' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a hall' }),
+    (0, swagger_1.ApiCreatedResponse)({ description: 'Hall created', type: hall_entity_1.Hall }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'A field is missing, has a wrong type, or a number is not a positive integer',
+        type: error_response_dto_1.ErrorResponseDto,
+    }),
+    (0, swagger_1.ApiConflictResponse)({
+        description: 'A hall with this name already exists',
+        type: error_response_dto_1.ErrorResponseDto,
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_hall_dto_1.CreateHallDto]),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", hall_entity_1.Hall)
 ], HallsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Отримати всі зали' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Список залів' }),
+    (0, swagger_1.ApiOperation)({ summary: 'List all halls' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Halls, empty array if there are none', type: [hall_entity_1.Hall] }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Array)
 ], HallsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Отримати зал зі схемою місць' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Зал та перелік місць' }),
-    (0, swagger_1.ApiNotFoundResponse)({ description: 'Зал не знайдено' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, swagger_1.ApiOperation)({ summary: 'Get one hall together with its seats' }),
+    (0, swagger_1.ApiParam)({ name: 'id', format: 'uuid' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'The hall with the `seats` array (rows x seatsPerRow items)',
+        type: hall_entity_1.HallWithSeats,
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({ description: 'No hall with this id', type: error_response_dto_1.ErrorResponseDto }),
+    __param(0, (0, common_1.Param)('id', parse_id_pipe_1.parseIdPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", hall_entity_1.HallWithSeats)
 ], HallsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
-    (0, swagger_1.ApiOperation)({ summary: 'Видалити зал' }),
-    (0, swagger_1.ApiNoContentResponse)({ description: 'Зал видалено' }),
-    (0, swagger_1.ApiNotFoundResponse)({ description: 'Зал не знайдено' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a hall' }),
+    (0, swagger_1.ApiParam)({ name: 'id', format: 'uuid' }),
+    (0, swagger_1.ApiNoContentResponse)({ description: 'Hall deleted' }),
+    (0, swagger_1.ApiNotFoundResponse)({ description: 'No hall with this id', type: error_response_dto_1.ErrorResponseDto }),
+    (0, swagger_1.ApiConflictResponse)({
+        description: 'At least one showing references the hall',
+        type: error_response_dto_1.ErrorResponseDto,
+    }),
+    __param(0, (0, common_1.Param)('id', parse_id_pipe_1.parseIdPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], HallsController.prototype, "remove", null);
 exports.HallsController = HallsController = __decorate([
-    (0, swagger_1.ApiTags)('Halls'),
+    (0, swagger_1.ApiTags)('halls'),
     (0, common_1.Controller)('halls'),
     __metadata("design:paramtypes", [halls_service_1.HallsService])
 ], HallsController);

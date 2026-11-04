@@ -1,23 +1,18 @@
 import { FilmsService } from '../films/films.service';
 import { HallsService } from '../halls/halls.service';
 import { CreateShowingDto } from './dto/create-showing.dto';
-export interface Showing {
-    id: string;
-    filmId: string;
-    hallId: string;
-    startsAt: string;
-}
+import { QueryShowingsDto } from './dto/query-showings.dto';
+import { Showing, ShowingView } from './entities/showing.entity';
 export declare class ShowingsService {
     private readonly filmsService;
     private readonly hallsService;
     private readonly showings;
     constructor(filmsService: FilmsService, hallsService: HallsService);
     create(dto: CreateShowingDto): Showing;
-    findAll(): Showing[];
-    findOne(id: string): Showing;
-    findByFilmId(filmId: string): Showing[];
-    findByHallId(hallId: string): Showing[];
-    hasShowingsForFilm(filmId: string): boolean;
-    hasShowingsForHall(hallId: string): boolean;
-    remove(id: string): void;
+    findAll(query: QueryShowingsDto): ShowingView[];
+    findOne(id: string): ShowingView;
+    findEntity(id: string): Showing;
+    existsForFilm(filmId: string): boolean;
+    existsForHall(hallId: string): boolean;
+    private toView;
 }

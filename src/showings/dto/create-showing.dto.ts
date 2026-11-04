@@ -1,21 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsDateString,
-  IsNotEmpty,
-  IsString,
-  IsUUID,
-} from 'class-validator';
+import { IsInt, IsISO8601, IsPositive, IsUUID } from 'class-validator';
 
 export class CreateShowingDto {
-  @ApiProperty({ example: 'cc9e4f23-8a45-46e8-b292-75a398434472' })
+  @ApiProperty({ description: 'Id of an existing film', format: 'uuid' })
   @IsUUID()
   filmId: string;
 
-  @ApiProperty({ example: '63321086-5e3f-46b2-a17e-8391ae7effeb' })
+  @ApiProperty({ description: 'Id of an existing hall', format: 'uuid' })
   @IsUUID()
   hallId: string;
 
-  @ApiProperty({ example: '2026-10-25T18:30:00.000Z' })
-  @IsDateString()
+  @ApiProperty({
+    description: 'ISO 8601 date and time, must be in the future',
+    example: '2099-01-01T18:00:00Z',
+  })
+  @IsISO8601({ strict: true, strictSeparator: true })
   startsAt: string;
+
+  @ApiProperty({
+    description: 'Ticket price in kopiykas, a positive integer (12500 = 125 UAH)',
+    example: 12500,
+    minimum: 1,
+  })
+  @IsInt()
+  @IsPositive()
+  price: number;
 }

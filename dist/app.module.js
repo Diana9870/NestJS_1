@@ -8,20 +8,30 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const app_controller_1 = require("./app.controller");
-const app_service_1 = require("./app.service");
+const config_1 = require("@nestjs/config");
+const core_1 = require("@nestjs/core");
+const bookings_module_1 = require("./bookings/bookings.module");
 const films_module_1 = require("./films/films.module");
 const halls_module_1 = require("./halls/halls.module");
 const showings_module_1 = require("./showings/showings.module");
-const bookings_module_1 = require("./bookings/bookings.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [films_module_1.FilmsModule, halls_module_1.HallsModule, showings_module_1.ShowingsModule, bookings_module_1.BookingsModule],
-        controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        imports: [
+            config_1.ConfigModule.forRoot({ isGlobal: true }),
+            films_module_1.FilmsModule,
+            halls_module_1.HallsModule,
+            showings_module_1.ShowingsModule,
+            bookings_module_1.BookingsModule,
+        ],
+        providers: [
+            {
+                provide: core_1.APP_PIPE,
+                useValue: new common_1.ValidationPipe({ whitelist: true, transform: true }),
+            },
+        ],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

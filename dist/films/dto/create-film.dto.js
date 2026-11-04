@@ -11,7 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateFilmDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
+const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
+const transforms_1 = require("../../common/transforms");
 class CreateFilmDto {
     title;
     durationMinutes;
@@ -19,20 +21,25 @@ class CreateFilmDto {
 }
 exports.CreateFilmDto = CreateFilmDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'Interstellar', description: 'Назва фільму' }),
+    (0, swagger_1.ApiProperty)({ example: 'Dune: Part Two', maxLength: 255 }),
+    (0, class_transformer_1.Transform)(transforms_1.trimString),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.MinLength)(1),
+    (0, class_validator_1.MaxLength)(255),
     __metadata("design:type", String)
 ], CreateFilmDto.prototype, "title", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 169, description: 'Тривалість у хвилинах' }),
+    (0, swagger_1.ApiProperty)({
+        description: 'Duration in minutes, a positive integer',
+        example: 166,
+        minimum: 1,
+    }),
     (0, class_validator_1.IsInt)(),
-    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.IsPositive)(),
     __metadata("design:type", Number)
 ], CreateFilmDto.prototype, "durationMinutes", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 2014, description: 'Рік випуску' }),
+    (0, swagger_1.ApiProperty)({ example: 2024, minimum: 1888, maximum: 2100 }),
     (0, class_validator_1.IsInt)(),
     (0, class_validator_1.Min)(1888),
     (0, class_validator_1.Max)(2100),

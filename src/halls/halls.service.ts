@@ -1,47 +1,39 @@
 import {
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { ShowingsService } from '../showings/showings.service';
 import { CreateHallDto } from './dto/create-hall.dto';
-
-export interface Hall {
-  id: string;
-  name: string;
-  rows: number;
-  seatsPerRow: number;
-}
-
-export interface Seat {
-  row: number;
-  seat: number;
-}
+import { Hall, HallWithSeats } from './entities/hall.entity';
+import { Seat } from './entities/seat.entity';
 
 @Injectable()
 export class HallsService {
   private readonly halls: Hall[] = [];
 
-  create(dto: CreateHallDto): Hall {
-    const normalizedName = dto.name.trim();
+  constructor(
+    // Halls and showings reference each other (a hall cannot be deleted while
+    // a showing uses it), hence forwardRef on both sides.
+    @Inject(forwardRef(() => ShowingsService))
+    private readonly showingsService: ShowingsService,
+  ) {}
 
-    if (
-      this.halls.some(
-        (hall) => hall.name.toLowerCase() === normalizedName.toLowerCase(),
-      )
-    ) {
+  create(dto: CreateHallDto): Hall {
+    if (this.halls.some((hall) => hall.name === dto.name)) {
       throw new ConflictException(
-        `Зал з назвою "${normalizedName}" вже існує`,
+        `Hall with name "${dto.name}" already exists`,
       );
     }
-
     const hall: Hall = {
       id: randomUUID(),
-      name: normalizedName,
+      name: dto.name,
       rows: dto.rows,
       seatsPerRow: dto.seatsPerRow,
     };
-
     this.halls.push(hall);
     return hall;
   }
@@ -50,44 +42,42 @@ export class HallsService {
     return [...this.halls];
   }
 
-  findOne(id: string): Hall & { seats: Seat[] } {
-    const hall = this.halls.find((item) => item.id === id);
+  /** Lookup for other modules that need "missing" as a value, not as an error. */
+  findById(id: string): Hall | undefined {
+    return this.halls.find((hall) => hall.id === id);
+  }
 
+  findOne(id: string): Hall {
+    const hall = this.findById(id);
     if (!hall) {
-      throw new NotFoundException(`Зал з id "${id}" не знайдено`);
+      throw new NotFoundException(`Hall with id ${id} not found`);
     }
+    return hall;
+  }
 
+  findOneWithSeats(id: string): HallWithSeats {
+    const hall = this.findOne(id);
+    return { ...hall, seats: this.buildSeats(hall) };
+  }
+
+  /** Seat layout of a hall: row 1..rows, seat 1..seatsPerRow, in that order. */
+  buildSeats(hall: Hall): Seat[] {
     const seats: Seat[] = [];
-
     for (let row = 1; row <= hall.rows; row++) {
       for (let seat = 1; seat <= hall.seatsPerRow; seat++) {
         seats.push({ row, seat });
       }
     }
-
-    return { ...hall, seats };
+    return seats;
   }
 
-  getHall(id: string): Hall {
-    const hall = this.halls.find((item) => item.id === id);
-
-    if (!hall) {
-      throw new NotFoundException(`Зал з id "${id}" не знайдено`);
-    }
-
-    return hall;
-  }
-
-  remove(id: string, hasShowings: boolean): void {
-    this.getHall(id);
-
-    if (hasShowings) {
+  remove(id: string): void {
+    const hall = this.findOne(id);
+    if (this.showingsService.existsForHall(id)) {
       throw new ConflictException(
-        `Неможливо видалити зал "${id}", оскільки на нього є сеанси`,
+        `Hall ${id} cannot be deleted: at least one showing references it`,
       );
     }
-
-    const index = this.halls.findIndex((hall) => hall.id === id);
-    this.halls.splice(index, 1);
+    this.halls.splice(this.halls.indexOf(hall), 1);
   }
 }

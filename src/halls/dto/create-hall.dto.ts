@@ -1,20 +1,37 @@
-
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsPositive,
+  IsString,
+  Max,
+  MaxLength,
+} from 'class-validator';
+import { trimString } from '../../common/transforms';
 
 export class CreateHallDto {
-  @ApiProperty({ example: 'Зал №1', description: 'Унікальна назва залу' })
+  @ApiProperty({ description: 'Must be unique among all halls', example: 'Hall 1', maxLength: 100 })
+  @Transform(trimString)
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   name: string;
 
-  @ApiProperty({ example: 3, description: 'Кількість рядів' })
+  @ApiProperty({ description: 'Number of rows, a positive integer', example: 3, minimum: 1, maximum: 1000 })
   @IsInt()
-  @Min(1)
+  @IsPositive()
+  @Max(1000)
   rows: number;
 
-  @ApiProperty({ example: 5, description: 'Місць у кожному ряду' })
+  @ApiProperty({
+    description: 'Seats in every row, a positive integer',
+    example: 5,
+    minimum: 1,
+    maximum: 1000,
+  })
   @IsInt()
-  @Min(1)
+  @IsPositive()
+  @Max(1000)
   seatsPerRow: number;
 }

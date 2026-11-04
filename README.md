@@ -1,132 +1,74 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Cinema API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Серверна частина кінотеатру на NestJS: фільми, зали, сеанси та бронювання місць.
+Бази даних немає, усі дані лежать у приватних масивах усередині сервісів і зникають після перезапуску процесу.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Встановлення залежностей
 
 ```bash
-$ npm install
+npm install
 ```
 
-## Compile and run the project
+## Запуск у режимі розробки
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run start:dev
 ```
 
-## Run tests
+Сервіс стартує на `http://localhost:3000` (порт береться зі змінної `PORT`).
+Swagger-документація: `http://localhost:3000/docs`.
 
-```bash
-# unit tests
-$ npm run test
+Інші команди: `npm run build` (збірка в `dist/`), `npm run start:prod` (запуск зібраного коду).
 
-# e2e tests
-$ npm run test:e2e
+## Змінні середовища
 
-# test coverage
-$ npm run test:cov
+Скопіюй `.env.example` у `.env` і за потреби зміни значення. Файл `.env` у репозиторій не потрапляє.
+
+```env
+# Port the HTTP server listens on
+PORT=3000
+
+# Runtime environment label (development | production)
+NODE_ENV=development
 ```
 
-## Deployment
+Якщо `.env` немає, сервіс стартує зі значенням `PORT=3000`.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Перевірка запитами
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Файл `requests.http` у корені містить запити до всіх маршрутів і до кожної описаної помилки.
+Він написаний для розширення [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) у VS Code: виконуй запити послідовно згори вниз (`Send Request` над кожним).
+Ідентифікатори підставляються зі змінних з відповідей попередніх запитів (`{{createFilm.response.body.id}}` тощо), вручну нічого вписувати не треба.
+Дати сеансів стоять у 2099 році, тому файл не «протухає», а назви залів рандомізовані, тому файл можна проходити повторно без перезапуску. Відповіді, які при першому проході порожні (наприклад, `GET /bookings` на початку), при повторі міститимуть дані попереднього проходу.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+## Структура
+
+```
+src/
+  main.ts            запуск, Swagger на /docs
+  app.module.ts      корінь, глобальний ValidationPipe, ConfigModule
+  common/            спільне: pipe для :id, DTO помилки, trim-трансформація
+  films/             фільми
+  halls/             зали, обчислення переліку місць
+  showings/          сеанси, фільтрація й сортування розкладу
+  bookings/          бронювання, схема місць сеансу
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Кожен модуль має контролер, сервіс, DTO в `dto/` і класи сутностей в `entities/`.
+Модулі звертаються один до одного лише через експортовані сервіси:
 
-## Observability
+- `ShowingsService` використовує `FilmsService` і `HallsService` (перевірка існування, назви у відповідях);
+- `FilmsService` і `HallsService` використовують `ShowingsService` (409 при видаленні, поки є сеанси). Це взаємна залежність, тому тут `forwardRef`;
+- `BookingsService` використовує `ShowingsService` і `HallsService` (сеанс, розміри залу, схема місць).
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+## Рішення, які варто знати
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project, run this and approve the code it prints at [observe.nestjs.com/link](https://observe.nestjs.com/link) - signing up for free if you have no account:
-
-```bash
-$ npx @nestjs/observe link
-```
-
-It installs `@nestjs/observe`, wires it into `AppModule` and `main.ts`, and writes the app key and secret into `.env`, which every `nest start` script (`start`, `start:dev`, `start:debug`) then loads. In production, set `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment instead.
-
-Or do it by hand:
-
-```bash
-$ npm install @nestjs/observe
-```
-
-Then follow the [setup guide](https://docs.nestjs.com/observability/sdk) - it takes a single import and an app key.
-
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- **Розподіл перевірок.** DTO (class-validator) перевіряють форму: наявність поля, тип, діапазон, формат, унікальність місць у масиві. Сервіси перевіряють правила, яким потрібен стан сховища: існує чи фільм і зал, чи місце є в залі, чи воно вільне, чи є залежні сеанси, чи час у майбутньому.
+- **`ValidationPipe`** глобальний (`whitelist` + `transform`): поля, яких немає в DTO, відкидаються й до сервісу не доходять.
+- **Некоректний `:id`.** Усі id генеруються сервером як UUID v4. Рядок, що не є UUID, неможливо знайти, тому `ParseUUIDPipe` повертає для нього 404, як і для невідомого id.
+- **Фільтр `date`.** Межі доби рахуються в UTC: `date=2099-01-01` залишає сеанси, що починаються від `2099-01-01T00:00:00Z` до `2099-01-01T23:59:59Z`. Сортування: за часом початку, при збігу за `id`.
+- **Відповіді `GET /showings` і `GET /showings/:id`** замість `filmId` і `hallId` містять `filmTitle` і `hallName`. `POST /showings` повертає сеанс з ідентифікаторами.
+- **Бронювання «все або нічого».** Усі місця запиту перевіряються (межі залу, зайнятість) до того, як щось записується, тому при 409 або 400 жодне місце не бронюється.
+- **Схема місць** `GET /showings/:id/seats` реалізована в `BookingsController`, бо обчислюється з бронювань, а `ShowingsModule` не повинен залежати від `BookingsModule`.
+- Гроші: ціни та `totalPrice` у копійках, цілими числами.
+- Розмір залу обмежений 1000 рядів і 1000 місць у ряду, щоб один запит не міг створити зал на мільярди місць.

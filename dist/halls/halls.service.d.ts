@@ -1,21 +1,16 @@
+import { ShowingsService } from '../showings/showings.service';
 import { CreateHallDto } from './dto/create-hall.dto';
-export interface Hall {
-    id: string;
-    name: string;
-    rows: number;
-    seatsPerRow: number;
-}
-export interface Seat {
-    row: number;
-    seat: number;
-}
+import { Hall, HallWithSeats } from './entities/hall.entity';
+import { Seat } from './entities/seat.entity';
 export declare class HallsService {
+    private readonly showingsService;
     private readonly halls;
+    constructor(showingsService: ShowingsService);
     create(dto: CreateHallDto): Hall;
     findAll(): Hall[];
-    findOne(id: string): Hall & {
-        seats: Seat[];
-    };
-    getHall(id: string): Hall;
-    remove(id: string, hasShowings: boolean): void;
+    findById(id: string): Hall | undefined;
+    findOne(id: string): Hall;
+    findOneWithSeats(id: string): HallWithSeats;
+    buildSeats(hall: Hall): Seat[];
+    remove(id: string): void;
 }

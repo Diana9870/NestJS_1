@@ -15,8 +15,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FilmsController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
+const error_response_dto_1 = require("../common/dto/error-response.dto");
+const parse_id_pipe_1 = require("../common/pipes/parse-id.pipe");
 const create_film_dto_1 = require("./dto/create-film.dto");
 const update_film_dto_1 = require("./dto/update-film.dto");
+const film_entity_1 = require("./entities/film.entity");
 const films_service_1 = require("./films.service");
 let FilmsController = class FilmsController {
     filmsService;
@@ -42,55 +45,70 @@ let FilmsController = class FilmsController {
 exports.FilmsController = FilmsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Створити фільм' }),
-    (0, swagger_1.ApiCreatedResponse)({ description: 'Фільм створено' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a film' }),
+    (0, swagger_1.ApiCreatedResponse)({ description: 'Film created', type: film_entity_1.Film }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'A field is missing or has a wrong type',
+        type: error_response_dto_1.ErrorResponseDto,
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_film_dto_1.CreateFilmDto]),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", film_entity_1.Film)
 ], FilmsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Отримати всі фільми' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Список фільмів' }),
+    (0, swagger_1.ApiOperation)({ summary: 'List all films' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Films, empty array if there are none', type: [film_entity_1.Film] }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Array)
 ], FilmsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Отримати фільм за ID' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Фільм знайдено' }),
-    (0, swagger_1.ApiNotFoundResponse)({ description: 'Фільм не знайдено' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, swagger_1.ApiOperation)({ summary: 'Get one film' }),
+    (0, swagger_1.ApiParam)({ name: 'id', format: 'uuid' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'The film', type: film_entity_1.Film }),
+    (0, swagger_1.ApiNotFoundResponse)({ description: 'No film with this id', type: error_response_dto_1.ErrorResponseDto }),
+    __param(0, (0, common_1.Param)('id', parse_id_pipe_1.parseIdPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", film_entity_1.Film)
 ], FilmsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Оновити фільм' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Фільм оновлено' }),
-    (0, swagger_1.ApiNotFoundResponse)({ description: 'Фільм не знайдено' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, swagger_1.ApiOperation)({ summary: 'Update any subset of the film fields' }),
+    (0, swagger_1.ApiParam)({ name: 'id', format: 'uuid' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'The updated film', type: film_entity_1.Film }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'A field has a wrong type',
+        type: error_response_dto_1.ErrorResponseDto,
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({ description: 'No film with this id', type: error_response_dto_1.ErrorResponseDto }),
+    __param(0, (0, common_1.Param)('id', parse_id_pipe_1.parseIdPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_film_dto_1.UpdateFilmDto]),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", film_entity_1.Film)
 ], FilmsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
-    (0, swagger_1.ApiOperation)({ summary: 'Видалити фільм' }),
-    (0, swagger_1.ApiNoContentResponse)({ description: 'Фільм видалено' }),
-    (0, swagger_1.ApiNotFoundResponse)({ description: 'Фільм не знайдено' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a film' }),
+    (0, swagger_1.ApiParam)({ name: 'id', format: 'uuid' }),
+    (0, swagger_1.ApiNoContentResponse)({ description: 'Film deleted' }),
+    (0, swagger_1.ApiNotFoundResponse)({ description: 'No film with this id', type: error_response_dto_1.ErrorResponseDto }),
+    (0, swagger_1.ApiConflictResponse)({
+        description: 'At least one showing references the film',
+        type: error_response_dto_1.ErrorResponseDto,
+    }),
+    __param(0, (0, common_1.Param)('id', parse_id_pipe_1.parseIdPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], FilmsController.prototype, "remove", null);
 exports.FilmsController = FilmsController = __decorate([
-    (0, swagger_1.ApiTags)('Films'),
+    (0, swagger_1.ApiTags)('films'),
     (0, common_1.Controller)('films'),
     __metadata("design:paramtypes", [films_service_1.FilmsService])
 ], FilmsController);
